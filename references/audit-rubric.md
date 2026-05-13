@@ -1,6 +1,6 @@
 # Audit rubric
 
-Drives audit coverage. For each principle and pattern, defines what the audit must check, what triggers a `[changed]` entry, and what triggers a `[review needed]` entry (conflict policy).
+Drives audit coverage. For each principle and pattern, defines what the audit must check, what triggers each tag, and how mode (migrate vs. optimize) affects the threshold.
 
 Citation format in audit output: `why: P9-end-focus` or `why: T-translate-6 + P9-end-focus`. Always cite the most specific source.
 
@@ -9,14 +9,20 @@ Citation format in audit output: `why: P9-end-focus` or `why: T-translate-6 + P9
 ## Coverage contract
 
 The audit MUST visit each row below and produce one of:
-- `[changed]` — voice principle violated, rewrite applied
-- `[ok]` — principle already respected, no change (do not surface in inline audit; counts in summary)
-- `[review needed]` — voice principle violated AND original logic is intentional (compliance, business rule); preserved with flag
-- `[out-of-scope]` — pattern detected that the source library doesn't cover (see `voice-ux-principles.md` gaps)
+
+| Tag | Meaning | Modes |
+|---|---|---|
+| `[changed]` | Voice principle violated or absent, rewrite applied | Both |
+| `[ok]` | Principle respected (counts in summary, not surfaced inline) | Both |
+| `[review needed]` | Principle violated AND intentionality signal present; preserve original, flag conflict | Both (threshold differs) |
+| `[consider]` | Principle present but applied weakly; suggestion only — no rewrite, no preservation | **Optimize only** |
+| `[out-of-scope]` | Pattern detected that source library doesn't cover | Both |
 
 ---
 
-## Principle-driven checks
+## Principle-driven checks (presence checks)
+
+Used in both modes. These check whether a principle is *present at all*. In migrate mode, absence dominates. In optimize mode, absence is rarer but still possible (script started voice-shaped but missed a category).
 
 | ID | Check | Triggers `[changed]` if… | Notes |
 |---|---|---|---|
@@ -36,7 +42,34 @@ The audit MUST visit each row below and produce one of:
 
 ---
 
+## Mis-application checks (optimize mode only)
+
+Used in optimize mode to detect principles that are *present but applied wrong*. These triggered `[consider]` (or `[changed]` if the mis-application is unambiguous, e.g., a clear copy bug).
+
+In migrate mode, these checks usually don't fire — the principle isn't present yet to be mis-applied. Run them anyway in case the source is partially voice-shaped (half-migrated script).
+
+| ID | Mis-application | Detection signal | Default tag |
+|---|---|---|---|
+| P10-mis-1 | Repair tier 2 directive exists but rephrasing is identical/near-identical to tier 1 | String similarity between tier 1 and tier 2 prompts >70%, OR tier 2 lacks constrained vocabulary or candidate understanding | `[consider]` |
+| P10-mis-2 | Repair tier 3 escalation defined but doesn't preserve state | Tier 3 prompt restarts the conversation OR doesn't reference collected fields | `[changed]` |
+| P11-mis-1 | Phrasebook exists but has fewer than 3 tokens per function | Token count < 3 in any function category | `[consider]` |
+| P11-mis-2 | Phrasebook tokens mix registers (formal + casual in same function) | Heuristic: contractions in some tokens but not others within the same function category; or one token uses "thank you" while another uses "thanks" | `[consider]` |
+| P11-mis-3 | Acknowledgment tokens never rotate (same one used every turn in sample) | Same token used in >3 consecutive turns in the sample | `[consider]` |
+| P2-mis-1 | Grounding policy exists but treats high-stakes fields as low-stakes | Phone, email, money, or irreversible action uses implicit echo or no confirmation | `[changed]` |
+| P2-mis-2 | Grounding policy over-confirms low-stakes fields | Date, postcode, single name uses explicit "Is that correct?" pattern | `[consider]` |
+| T-opening-mis-1 | Two-voice opening exists but system layer uses contractions | "We're", "you're", "I'm" in system-layer content | `[changed]` |
+| T-opening-mis-2 | Two-voice opening exists but agent layer is too long | Agent-layer utterance > ~5s spoken (~75 words) | `[consider]` |
+| T-latency-mis-1 | Pre-announce exists for some actions but not all | Subset of tool/action calls have verbal lead-in; others don't | `[changed]` |
+| T-latency-mis-2 | Pre-announce exists but is identical for short and long operations | Same "Let me check…" used regardless of expected duration | `[consider]` |
+| P6-mis-1 | Sequential gathering exists but order doesn't match natural narrative | Field order matches data-schema (e.g., DOB before name) rather than how a person would volunteer | `[consider]` |
+| P3-mis-1 | Reprompt language exists but doesn't vary across attempts | Same reprompt string used for tiers 1 and 2 | `[changed]` |
+| P12-mis-1 | Handoff announcement exists but doesn't include what/where/why | Announcement names the modality but not the reason or destination | `[consider]` |
+
+---
+
 ## Translation-rule checks (T-translate)
+
+Used in both modes. In optimize mode these usually return `[ok]` for voice-source scripts, but catch text-shaped legacy regions in half-migrated scripts.
 
 | ID | Trigger pattern (regex/heuristic) | Action |
 |---|---|---|
@@ -52,6 +85,8 @@ The audit MUST visit each row below and produce one of:
 ---
 
 ## Pattern checks (T-grounding, T-repair, T-latency)
+
+Used in both modes.
 
 | ID | Check | Action |
 |---|---|---|
@@ -69,19 +104,36 @@ The audit MUST visit each row below and produce one of:
 
 ## Conflict policy → `[review needed]`
 
-When the source script's behavior is voice-suboptimal AND there is a signal it's intentional, do NOT rewrite. Surface as `[review needed]` with all of:
+Threshold differs by mode.
+
+### Migrate mode (default conservative)
+
+When the source script's behavior is voice-suboptimal AND there is a signal it's intentional, preserve the original. Surface as `[review needed]` with:
 - The original directive (quoted)
 - The voice principle it conflicts with (cite ID)
 - A one-sentence recommendation
-- The signal that suggested intentionality (e.g., "compliance", "regulatory", "policy", "always", or a business-rule comment in the script)
+- The signal that suggested intentionality
 
-**Examples of intentionality signals:**
-- Explicit compliance/regulatory language ("PCI", "GDPR consent", "must record")
-- Repeated assertion of the same rule across multiple turns
+**Strong intentionality signals (preserve in both modes):**
+- Explicit compliance/regulatory language ("PCI", "GDPR consent", "must record", "required by")
 - Comment or instruction text marking the directive as fixed
-- Bundled question that asks for items that are legally bound together (e.g., consent + identification)
+- Bundled question that asks for items legally bound together (e.g., consent + identification)
 
-Do not infer intentionality from a single occurrence of suboptimal copy.
+**Weak intentionality signals (preserve in migrate mode, surface as `[review needed]` or `[consider]` in optimize mode):**
+- Repeated assertion of the same rule across multiple turns
+- Pattern repeated across topics
+
+Do not infer intentionality from a single occurrence of suboptimal copy in either mode.
+
+### Optimize mode (lower bar)
+
+The developer is asking for an opinion. Be more willing to challenge.
+
+- Strong intentionality signals → preserve as `[review needed]` (same as migrate).
+- Weak intentionality signals → flag as `[review needed]` with a stronger recommendation, OR as `[consider]`. Do not preserve silently.
+- No intentionality signal → rewrite as `[changed]`.
+
+The bar shift means: in migrate mode, "the designer probably knew what they were doing" is the working assumption. In optimize mode, "the designer wants my opinion" is the working assumption.
 
 ---
 
@@ -96,3 +148,31 @@ If the audit finds these patterns, flag as `[out-of-scope]` rather than rewrite 
 - Agent-to-agent skill transfer
 
 Surface in audit summary; do not block the rewrite.
+
+---
+
+## Mode-detection signals (for the extraction pass)
+
+Used during automated extraction (Phase 3 of the intake flow) to infer mode. The extraction pass surfaces what it found and the proposed mode; the developer confirms in Phase 4.
+
+### Text-shaped signals (suggests migrate mode)
+- Interface verbs in copy ("click", "tap", "select", "submit") — T-translate-2
+- Format prescriptions in default prompts ("DD-MM-YYYY", "international format") — T-translate-4
+- Visual references ("as shown", "see below") — T-translate-5
+- Numbered/bulleted menus in copy — T-translate-6
+- Bundled questions joined by "and"/"also" — T-translate-8
+- No repair tier directives in instructions
+- No latency pre-announce patterns in instructions
+- No phrasebook tokens defined
+- No two-voice opening structure
+
+### Voice-shaped signals (suggests optimize mode)
+- Repair tier directives present (tier 1 / tier 2 / tier 3 referenced)
+- Grounding-by-field-type policy present (different rules for phone vs. date)
+- Latency pre-announce patterns present ("if X takes more than a second, say…")
+- Phrasebook tokens defined (rotating acknowledgments)
+- Two-voice opening structure present
+- Absence of interface verbs in copy
+
+### Mixed signals (half-migrated script)
+If both signal sets are present (e.g., voice-shaped instructions but text-shaped copy strings), default the proposed mode to **optimize** and surface the mixed signals to the developer. Optimize mode's mis-application checks plus the T-translate checks will catch both shapes.

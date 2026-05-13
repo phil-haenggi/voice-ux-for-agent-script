@@ -54,6 +54,12 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 
 **Implication for instructions (Layer A):** Encode grounding as conditional behavior keyed to field type. Don't write a flat "always confirm" rule — that produces over-confirmation on low-stakes fields and under-confirmation on irreversible ones.
 
+**Common mis-applications (optimize mode):**
+- Field-type policy exists but treats phone/email/money as low-stakes (implicit echo only).
+- Over-confirms low-stakes fields with "Is that correct?" patterns.
+- Confirms but then proceeds before the user can object (no pause for correction).
+- "Always confirm" flat rule disguised as field-type policy — same behavior across all fields.
+
 ---
 
 ## T-repair — Repair tier ladder
@@ -68,6 +74,13 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 
 **Format-prescription rule:** Format prescriptions ("could you say it as day, month, year?") and constrained vocabularies ("just yes or no") are legitimate **only at Tier 2**. They are anti-patterns as defaults (see T-translate-4).
 
+**Common mis-applications (optimize mode):**
+- Tier 2 prompt is just a rephrase of Tier 1 — no constraint, no candidate understanding.
+- Tier 1 reprompt blames the user ("you weren't clear", "I didn't understand you") rather than the system.
+- Tier 3 handoff exists but doesn't preserve state — the user has to start over with the human.
+- Same reprompt string used across tiers (no escalation in language).
+- Format prescription leaked into Tier 1 default (anti-pattern; only legitimate at Tier 2).
+
 ---
 
 ## T-latency — Latency budget
@@ -80,6 +93,12 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 | T-latency-long | Anything >10s | — | Pre-announce + offer call-back option |
 
 **Implication for instructions (Layer A):** The LLM must say *something* before any non-trivial pause. Encode this as a behavioral rule, not a copy string.
+
+**Common mis-applications (optimize mode):**
+- Pre-announce exists for slow operations but missing for medium ones (1–3s lookups).
+- Same pre-announce string used regardless of expected duration ("Let me check…" for both 1s and 12s operations).
+- Verbal fillers absent for >3s operations (silent processing).
+- No call-back option offered for >10s operations.
 
 ---
 
@@ -98,6 +117,12 @@ Rotating tokens prevent robotic repetition. Skill should select 3–6 per catego
 
 These are starting points. Adjust register (warmer/cooler, more/less formal) to match the source agent's persona.
 
+**Common mis-applications (optimize mode):**
+- Phrasebook defined but with fewer than 3 tokens per function — no real rotation possible.
+- Tokens within a function mix registers (e.g., "Got it" + "Thank you so much" + "Right" — three different formality levels for the same purpose).
+- Rotation defined but the LLM picks the same token every turn anyway because the instructions don't enforce variation.
+- Phrasebook copied verbatim from the scaffold without adjustment to the agent's persona.
+
 ---
 
 ## T-opening — Two-voice opening structure
@@ -113,3 +138,10 @@ These are starting points. Adjust register (warmer/cooler, more/less formal) to 
 - **If not available**: agent voices both layers in sequence with the handover pause.
 
 **Implication for Layer D:** The opening is split across artifacts. System-layer content may live in carrier configuration (Layer E), agent-layer content lives in the Agent Script welcome.
+
+**Common mis-applications (optimize mode):**
+- System layer uses contractions ("we're recording your call") — breaks the formal/measured register that distinguishes it from the agent layer.
+- Agent layer is too long (>5s spoken length), defeating the split.
+- Two-voice structure defined but both layers use the same TTS voice — no auditory contrast for the user.
+- System layer plays both via carrier AND agent (disclosure repetition), when carrier-side announcement is available.
+- Handover pause absent or too short (<300ms) — no perceptual gap between layers.

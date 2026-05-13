@@ -16,6 +16,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 **Migration heuristic:** Long monologues in chat (multi-paragraph answers, lists) must be chunked into interruptible units in voice. If a turn exceeds ~3 sentences, break it.
 
+**Common mis-applications (optimize mode):** Chunking present but the chunks are still single utterances at runtime because there's no pause directive between them. Or chunks are short but lack a clear interruptible point ("safe place").
+
 ---
 
 ## P2 — Grounding & Confirmation
@@ -31,6 +33,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 - Voice (fails): "London?" / "March 15th?" / "Economy?" [six turns]
 - Fixed: "London, March 15th, economy. Shall I search?"
 
+**Common mis-applications (optimize mode):** Grounding policy exists but treats high-stakes fields (phone, email, money) as low-stakes (implicit echo). Or over-confirms low-stakes fields with explicit "Is that correct?" patterns. Or asks for confirmation but proceeds before the user can object.
+
 ---
 
 ## P3 — No-Input & No-Match Escalation
@@ -40,6 +44,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 **Voice vs. text contrast:** Text has no silence to interpret; voice must distinguish silence from confusion from disengagement.
 
 **Migration heuristic:** Map every error message in the source script to a tier (1/2/3, see `telephony-patterns.md#T-repair`). Reprompt language varies per attempt.
+
+**Common mis-applications (optimize mode):** Reprompt strings exist but are identical across tiers — the structure is there but the language doesn't escalate. Or reprompts vary but still blame the user ("you weren't clear", "I need you to speak louder").
 
 ---
 
@@ -51,6 +57,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 **Migration heuristic:** Chat openings of >5s spoken length must be split. Insert pre-closing token before terminal in any flow that ends a transaction.
 
+**Common mis-applications (optimize mode):** Two-voice opening defined but the system layer uses contractions ("we're recording your call") which breaks the formal/measured register. Or agent layer is too long, defeating the split. Or closing has a pre-closing token but no terminal exchange ("Bye now") — the call ends abruptly.
+
 ---
 
 ## P5 — Prosodic Design & Intonation
@@ -61,6 +69,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 **Migration heuristic:** Where SSML/prosody markup is supported (Layer E concern), recommend stress and pacing on numbers, names, and unfamiliar terms.
 
+**Common mis-applications (optimize mode):** SSML present but applied generically — same `<prosody>` settings everywhere, no contrast between known/new information. Or stress applied to function words ("THE", "TO") rather than content words.
+
 ---
 
 ## P6 — Sequential Information Gathering
@@ -70,6 +80,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 **Voice vs. text contrast:** "Stacking multiple questions violates adjacency-pair structure." Text forms can ask many fields at once; voice adjacency pairs demand strict turn-by-turn sequencing.
 
 **Migration heuristic:** Find every place the script asks for two or more pieces of info in one turn. Split. Reorder if data-schema order doesn't match how a person would volunteer it.
+
+**Common mis-applications (optimize mode):** One-question-per-turn followed correctly, but field order matches the database schema rather than natural narrative (e.g., asking DOB before name, or postcode before address line 1). Or progress signaling absent for sequences >5 fields, leaving the user uncertain how much longer.
 
 ---
 
@@ -85,6 +97,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 - Text (implicit): [spinning wheel]
 - Voice (must be explicit): "Let me search... [pause] Comparing airlines... [pause] Cheapest is $845."
 
+**Common mis-applications (optimize mode):** Pre-announce exists for some actions but not all — usually the slowest ones get covered, but a 2–3 second lookup gets missed. Or pre-announce is identical for every operation regardless of expected duration ("Let me check…" used for both a 1-second cache hit and a 12-second multi-system join).
+
 ---
 
 ## P8 — Turn Design & Progressivity
@@ -95,6 +109,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 **Migration heuristic:** "Multi-part" is anything that asks the user to track more than one thing. Split. Sequence in natural narrative order.
 
+**Common mis-applications (optimize mode):** Turns are atomic by count but still cognitively multi-part — e.g., "I'll need your date of birth and the year you joined" framed as one question because both are dates. The user has to track two things.
+
 ---
 
 ## P9 — Turn-Final Placement & End-Focus
@@ -104,6 +120,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 **Voice vs. text contrast:** "Turn-final position carries highest perceptual weight in spoken interaction… spoken language is ephemeral — users cannot re-read." Text allows scanning; voice requires information architecture restructuring.
 
 **Migration heuristic:** Reverse turns where the question comes before context. "What date works for you? I have slots Tuesday, Wednesday, Friday." → "I have slots Tuesday, Wednesday, Friday — what works?"
+
+**Common mis-applications (optimize mode):** End-focus respected for questions, but critical confirmation data is buried mid-turn ("Right, I've booked your appointment for 3pm at the Highgate clinic, and I've sent you a text confirmation"). The user remembers "text confirmation" and forgets the time and location.
 
 ---
 
@@ -121,6 +139,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 - Turn 3: "You mean cancel order 7-8-4-2?" [candidate]
 - Turn 4+: "Can you spell that?" or "I'll text you a link" [modality shift]
 
+**Common mis-applications (optimize mode):** Tier ladder defined but tier 2 is not actually a constraint or candidate understanding — it's just a rephrase of tier 1 ("Sorry, could you say that again?" → "Sorry, I didn't catch that — could you say it once more?"). Or tier 3 hands off but doesn't preserve state, forcing the user to restart.
+
 ---
 
 ## P11 — Voice Persona & Phrasebook
@@ -131,6 +151,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 **Migration heuristic:** Inventory acknowledgments and discourse markers across the source script. If they don't form a coherent set, build one. See `telephony-patterns.md#T-phrasebook`.
 
+**Common mis-applications (optimize mode):** Phrasebook exists but has fewer than 3 tokens per function (no rotation possible). Or tokens mix registers within a function ("Got it" / "Thank you so much" / "Right" — three different formality levels for the same purpose). Or rotation is defined but the LLM picks the same token every turn anyway because the instructions don't enforce variation.
+
 ---
 
 ## P12 — Voice-to-Screen Handoff
@@ -140,6 +162,8 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 **Voice vs. text contrast:** Text-to-text handoffs are seamless; voice-to-screen requires explicit announcement and context bridging.
 
 **Migration heuristic:** If the modality trait matrix says "screen fallback available", design handoff turns. If "SMS fallback", design SMS-link patterns. If neither, Tier 3 escalation must be human-handoff (see T-repair-tier-3).
+
+**Common mis-applications (optimize mode):** Handoff exists but announces only the modality ("I'm sending you a text") without the what/where/why ("I'm sending you a link to upload your ID — once you've done that, I'll pick up where we left off"). Or handoff drops collected state, forcing the user to re-supply data on the new modality.
 
 ---
 

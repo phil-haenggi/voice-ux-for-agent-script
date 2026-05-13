@@ -1,14 +1,16 @@
 # Rewrite bundle — output skeleton
 
-The skill produces ONE file per migration, structured as below. Each layer is independently usable: developer can drop Layer A into Agent Script instructions, Layer B into copy fields, etc., without untangling.
+The skill produces ONE file per migration or optimization, structured as below. Each layer is independently usable: developer can drop Layer A into Agent Script instructions, Layer B into copy fields, etc., without untangling.
 
-Suggested filename: `_local/generated/[agent-name]-voice-migration.md`
+Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization}.md`
 
 ---
 
 ```markdown
-# Voice migration: [agent name]
+# Voice UX work: [agent name]
 
+**Mode:** migrate / optimize
+**Mode rationale:** [one-line: text-shaped signals dominated extraction → migrate / voice-shaped signals dominated → optimize / mixed signals, developer chose X]
 **Source:** [path to original Agent Script]
 **Sample:** [path to provided sample] OR `synthetic — verify against real flow`
 **Modality traits:**
@@ -21,17 +23,36 @@ Suggested filename: `_local/generated/[agent-name]-voice-migration.md`
 
 ---
 
+## Mode-detection extraction summary
+
+[Optional but recommended — list the signals that drove mode inference. Helps the developer sanity-check.]
+
+**Text-shaped signals found:**
+- [signal: where in source / count]
+- [...]
+
+**Voice-shaped signals found:**
+- [signal: where in source / count]
+- [...]
+
+**Inferred mode:** [migrate / optimize / mixed]
+**Developer-confirmed mode:** [migrate / optimize]
+
+---
+
 ## Summary
 
-| Category | Changed | Review needed | Out-of-scope | OK |
-|---|---|---|---|---|
-| Turn structure | N | N | N | N |
-| Repair | N | N | N | N |
-| Grounding | N | N | N | N |
-| Copy / translation | N | N | N | N |
-| Opening / closing | N | N | N | N |
-| Latency | N | N | N | N |
-| Phrasebook | N | N | N | N |
+| Category | Changed | Review needed | Consider | Out-of-scope | OK |
+|---|---|---|---|---|---|
+| Turn structure | N | N | N | N | N |
+| Repair | N | N | N | N | N |
+| Grounding | N | N | N | N | N |
+| Copy / translation | N | N | N | N | N |
+| Opening / closing | N | N | N | N | N |
+| Latency | N | N | N | N | N |
+| Phrasebook | N | N | N | N | N |
+
+> `Consider` column populated only in optimize mode. In migrate mode it stays at zero.
 
 **Synthetic sample warnings:** [if applicable, list assumptions the synthetic sample made that need verification]
 
@@ -152,7 +173,7 @@ Suggested filename: `_local/generated/[agent-name]-voice-migration.md`
 
 ## Audit detail (inline changes)
 
-> Every non-trivial change with rationale. Use `[changed]`, `[review needed]`, or `[out-of-scope]` tags.
+> Every non-trivial entry with rationale. Use `[changed]`, `[review needed]`, `[consider]` (optimize only), or `[out-of-scope]` tags.
 
 ### [changed] [location-in-source]
 - **Original:** "[quote]"
@@ -165,6 +186,12 @@ Suggested filename: `_local/generated/[agent-name]-voice-migration.md`
 - **Voice principle violated:** [citation]
 - **Why preserved:** [intentionality signal — e.g., compliance flag]
 - **Recommendation:** [one sentence]
+
+### [consider] [location-in-source]  *(optimize mode only)*
+- **Current:** "[quote]"
+- **Voice principle present but applied weakly:** [citation, e.g., P10-mis-1 — repair tier 2 identical to tier 1]
+- **Suggested improvement:** "[quote of improved version]"
+- **why:** [principle citation + mis-application ID from audit-rubric.md]
 
 ### [out-of-scope] [pattern detected]
 - **Pattern:** [e.g., user expresses anger across 3 turns]

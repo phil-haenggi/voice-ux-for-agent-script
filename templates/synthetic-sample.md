@@ -1,6 +1,10 @@
 # Synthetic sample — output skeleton
 
-Used when no sample conversation was provided. The skill generates a plausible 1-task sample from the source Agent Script's stated capabilities, stamps it, and presents it to the developer for review BEFORE the audit runs. The developer can edit, replace, or accept.
+Used in either mode when no sample conversation was provided. The skill generates a plausible 1-task sample from the source Agent Script's stated capabilities, stamps it, and presents it to the developer for review BEFORE the audit runs. The developer can edit, replace, or accept.
+
+**Mode-specific notes:**
+- **Migrate mode:** Source is text-shaped. Synthesis assumes a user typing in chat, then translates to a plausible voice equivalent. The sample shows what the *current* (text) flow looks like — not what the rewrite will produce.
+- **Optimize mode:** Source is voice-shaped. Synthesis assumes a phone or voice-over-web user. The sample reveals the script's current voice behavior (including any mis-applications the audit will flag).
 
 Suggested filename: `_local/generated/[agent-name]-synthetic-sample.md`
 
@@ -9,11 +13,13 @@ Suggested filename: `_local/generated/[agent-name]-synthetic-sample.md`
 ```markdown
 # Synthetic sample conversation
 
-> **⚠️ SYNTHETIC — verify against real flow before relying on the migration.**
+> **⚠️ SYNTHETIC — verify against real flow before relying on the audit.**
 >
 > This conversation was generated from the source Agent Script's stated capabilities. It represents what the script *says* it does, not what real users actually do. Edit any turn that doesn't match real flow, then re-run the audit.
 
+**Mode:** migrate / optimize
 **Source script:** [path]
+**Source shape:** text-shaped / voice-shaped (per mode)
 **Synthesis date:** [YYYY-MM-DD]
 **Primary intent assumed:** [one-line summary]
 **Capabilities used (from source):** [list of topics/actions exercised]
@@ -59,4 +65,6 @@ Each turn cites which capability or instruction in the source script it derives 
 ## Next step
 
 Once you've verified or edited the sample, the skill will run the audit + rewrite against THIS sample. If the synthetic sample is wrong, the audit will be wrong.
+
+In optimize mode specifically: a synthetic sample for a voice-shaped script may inadvertently smooth over weaknesses the real flow has. If the script has weak repair, weak grounding, or unrotated phrasebook tokens, the synthesis should *expose* those — not paper over them. If the sample looks suspiciously perfect, that's a signal the synthesis is wrong, not that the script is good.
 ```
