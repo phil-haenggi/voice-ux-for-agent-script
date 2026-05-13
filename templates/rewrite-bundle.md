@@ -12,7 +12,7 @@ Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization
 **Mode:** migrate / optimize
 **Mode rationale:** [one-line: text-shaped signals dominated extraction → migrate / voice-shaped signals dominated → optimize / mixed signals, developer chose X]
 **Source:** [path to original Agent Script]
-**Sample:** [path to provided sample] OR `synthetic — verify against real flow`
+**Sample:** [path to provided sample]
 **Modality traits:**
 - Barge-in available: yes / no
 - Screen fallback for handoff: yes / no
@@ -53,8 +53,6 @@ Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization
 | Phrasebook | N | N | N | N | N |
 
 > `Consider` column populated only in optimize mode. In migrate mode it stays at zero.
-
-**Synthetic sample warnings:** [if applicable, list assumptions the synthetic sample made that need verification]
 
 **Layer E items the developer still owes:** [count and one-line names]
 

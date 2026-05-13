@@ -28,7 +28,7 @@ description: >
   testing-agentforce); analyzing production voice session traces (use
   observing-agentforce); configuring TTS voice casting, IVR menu structure, or
   ASR vendor settings (out of scope — surfaced in Layer E for handoff).
-version: 0.2.1
+version: 0.2.2
 date: 2026-05-13
 author: phil-haenggi
 tags: [salesforce, agentforce, agent-script, voice, telephony, migration, optimization, voice-ux, conversation-design, repair, grounding, latency, phrasebook, two-voice-opening, audit]
@@ -54,7 +54,6 @@ Mode is auto-detected from extraction signals (text-shaped vs. voice-shaped patt
 
 **What it produces:**
 - A migration/optimization bundle (`_local/generated/[agent-name]-voice-{migration,optimization}.md`) with five labeled layers (instructions, copy, phrasebook, opening, out-of-script notes) plus inline audit
-- A synthetic sample (`_local/generated/[agent-name]-synthetic-sample.md`) when no real sample is provided
 
 **What it does not do:** Build voice agents from scratch. Design the agent's persona/voice character. Run runtime QA. Configure TTS/ASR/IVR. Generate non-English copy. Resolve multi-intent or emotional-de-escalation patterns (gaps in the source library — flagged as `[out-of-scope]`).
 
@@ -75,16 +74,16 @@ The skill consults three local references at runtime. Do not regenerate from ext
 
 ## Phase 1 — Artifact Intake
 
-**Required input:** Path to or contents of the source Agent Script (`.agent` file, YAML, or text instructions).
-
-**Optional input:** Path to or contents of a sample conversation showing the main use case.
+**Required inputs:**
+- Path to or contents of the source Agent Script (`.agent` file, YAML, or text instructions).
+- Path to or contents of a sample conversation showing the main use case (turn-by-turn transcript). Real production logs, hand-written mockups, or the developer's best guess are all acceptable — but the developer is responsible for representativeness.
 
 **Behavior:**
 1. Read the source Script. Identify topics, actions, system instructions, welcome/error/copy strings.
-2. If a sample is provided, read it.
-3. If no sample is provided, **synthesize one** using `templates/synthetic-sample.md` as the skeleton. The synthesis adapts to mode (migrate → text-shaped sample, optimize → voice-shaped sample). Stamp it `synthetic — verify against real flow`, write it to `_local/generated/[agent-name]-synthetic-sample.md`, and **show it to the developer for review BEFORE proceeding**. The developer can edit, replace, or accept.
+2. Read the sample.
+3. **If no sample is provided, refuse to proceed.** Tell the developer the skill needs a sample conversation, explain why (the audit is meaningless without seeing how the agent actually behaves turn by turn — repair, grounding, latency, and turn structure are observable only in flow), and ask them to provide one. Do not synthesize.
 
-Do not proceed to Phase 2 until the sample (real or synthetic-and-acknowledged) is settled.
+Do not proceed to Phase 2 until the sample is settled.
 
 ## Phase 2 — Automated Extraction (mode detection)
 
@@ -223,7 +222,7 @@ Self-checks the skill should run before declaring the work complete:
 4. **Conflict policy:** No silent overrides of original business logic. If voice principle and original logic disagree AND strong intentionality signal present, output is `[review needed]` regardless of mode. If only weak intentionality signal, behavior matches the mode (preserve in migrate, flag in optimize).
 5. **Optimize-mode mis-application coverage:** In optimize mode, every principle present in the source was checked against its mis-application list, not just its presence.
 6. **Trait sensitivity:** Rewrites against the same Script with different modality traits produce meaningfully different Layer D and Layer E outputs.
-7. **Synthetic-sample stamping:** If sample was synthesized, every artifact derived from it carries the `synthetic — verify against real flow` warning.
+7. **Sample required:** A sample conversation was provided. The skill does not synthesize one; if missing, it refuses to proceed.
 
 ## File layout
 
@@ -236,6 +235,5 @@ voice-ux-for-agent-script/
 │   ├── telephony-patterns.md         # T-translate, T-grounding, T-repair, T-latency, T-phrasebook, T-opening + mis-applications
 │   └── audit-rubric.md               # Coverage contract, mis-application checks, mode-dependent conflict policy, mode-detection signals
 └── templates/
-    ├── rewrite-bundle.md             # Output skeleton (Layers A–E, mode-aware)
-    └── synthetic-sample.md           # Synthesized-sample skeleton (mode-aware)
+    └── rewrite-bundle.md             # Output skeleton (Layers A–E, mode-aware)
 ```

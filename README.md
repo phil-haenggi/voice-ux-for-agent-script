@@ -62,10 +62,9 @@ voice-ux-for-agent-script/
 │   ├── telephony-patterns.md         # Operational tables + mis-applications
 │   └── audit-rubric.md               # Coverage contract, mis-application checks, mode-dependent conflict policy, mode-detection signals
 └── templates/
-    ├── rewrite-bundle.md             # Output skeleton (Layers A–E, mode-aware)
-    └── synthetic-sample.md           # Synthesized-sample skeleton (mode-aware)
+    └── rewrite-bundle.md             # Output skeleton (Layers A–E, mode-aware)
 ```
 
 ## Status
 
-v0.2.1 — refines criteria (openings, two-voice contrast, latency, grounding) following first review pass. v0.2.0 added optimize mode, mode auto-detection, mis-application checks, mode-dependent conflict policy. Renamed from `migrating-text-to-voice` (v0.1.0). Not yet validated against a real audit.
+v0.2.2 — sample conversation now mandatory; synthetic-sample fallback removed. v0.2.1 refined criteria (openings, two-voice contrast, latency, grounding). v0.2.0 added optimize mode, mode auto-detection, mis-application checks, mode-dependent conflict policy. Renamed from `migrating-text-to-voice` (v0.1.0). Not yet validated against a real audit.
