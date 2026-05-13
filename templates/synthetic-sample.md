@@ -1,0 +1,62 @@
+# Synthetic sample — output skeleton
+
+Used when no sample conversation was provided. The skill generates a plausible 1-task sample from the source Agent Script's stated capabilities, stamps it, and presents it to the developer for review BEFORE the audit runs. The developer can edit, replace, or accept.
+
+Suggested filename: `_local/generated/[agent-name]-synthetic-sample.md`
+
+---
+
+```markdown
+# Synthetic sample conversation
+
+> **⚠️ SYNTHETIC — verify against real flow before relying on the migration.**
+>
+> This conversation was generated from the source Agent Script's stated capabilities. It represents what the script *says* it does, not what real users actually do. Edit any turn that doesn't match real flow, then re-run the audit.
+
+**Source script:** [path]
+**Synthesis date:** [YYYY-MM-DD]
+**Primary intent assumed:** [one-line summary]
+**Capabilities used (from source):** [list of topics/actions exercised]
+
+---
+
+## Provenance per turn
+
+Each turn cites which capability or instruction in the source script it derives from. If a turn has no provenance, it's an assumption — flagged inline.
+
+| Turn | Speaker | Utterance | Source provenance |
+|---|---|---|---|
+| 1 | Agent | [opening] | system.welcome |
+| 2 | User | [first-task input] | _assumed_ — typical opener for [intent] |
+| 3 | Agent | [response] | topic:[name] / action:[name] |
+| 4 | User | [follow-up] | _assumed_ — typical user volunteer pattern |
+| ... | | | |
+
+---
+
+## Assumptions made (for developer review)
+
+> Each item is something the synthesis had to invent. If any is wrong, edit the corresponding turn and re-run.
+
+1. **Primary intent:** Assumed the user enters with [intent]. The source script supports multiple intents — confirm this is the most common.
+2. **Field order:** Assumed the user volunteers [field A] before [field B]. Real users may volunteer in a different order.
+3. **Repair path:** No repair was triggered in this sample. If real users frequently mishear or mis-speak [field X], add a repair turn.
+4. **[other assumption]**
+
+---
+
+## Edits
+
+> If you edit this file, mark which turns you changed:
+>
+> - [ ] Turn N: [reason]
+> - [ ] Turn N: [reason]
+>
+> Then re-run the migration: it will use your edits.
+
+---
+
+## Next step
+
+Once you've verified or edited the sample, the skill will run the audit + rewrite against THIS sample. If the synthetic sample is wrong, the audit will be wrong.
+```
