@@ -33,7 +33,7 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 - Voice (fails): "London?" / "March 15th?" / "Economy?" [six turns]
 - Fixed: "London, March 15th, economy. Shall I search?"
 
-**Common mis-applications (optimize mode):** Grounding policy exists but treats high-stakes fields (phone, email, money) as low-stakes (implicit echo). Or over-confirms low-stakes fields with explicit "Is that correct?" patterns. Or asks for confirmation but proceeds before the user can object.
+**Common mis-applications (optimize mode):** Grounding policy exists but doesn't escalate on low ASR confidence — phone numbers and emails skim past on implicit echo even when the recogniser was uncertain. Or money/irreversible actions get only implicit echo, with no explicit summary + check before commit. Or over-confirms low-stakes fields with explicit "Is that correct?" patterns. Or asks for confirmation but proceeds before the user can object.
 
 ---
 
@@ -51,13 +51,13 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 ## P4 — Opening & Closing Sequences
 
-**Summary:** Openings: <5s, end with clear question. Closings: three-step negotiation (pre-closing → topic confirmation → terminal exchange). Both must feel collaborative, never abrupt or drop-call-like.
+**Summary:** Openings: ~5–7s, end with clear question. Closings: three-step negotiation (pre-closing → topic confirmation → terminal exchange). Both must feel collaborative, never abrupt or drop-call-like.
 
-**Voice vs. text contrast:** Chat openings can be paragraph-length welcomes; voice must front-load identity + first question in <5s. Chat closings can be one line; voice closings are negotiated.
+**Voice vs. text contrast:** Chat openings can be paragraph-length welcomes; voice must front-load identity + first question quickly (~5–7s). Chat closings can be one line; voice closings are negotiated.
 
-**Migration heuristic:** Chat openings of >5s spoken length must be split. Insert pre-closing token before terminal in any flow that ends a transaction.
+**Migration heuristic:** Chat openings notably longer than ~7s spoken length should be split. Insert pre-closing token before terminal in any flow that ends a transaction.
 
-**Common mis-applications (optimize mode):** Two-voice opening defined but the system layer uses contractions ("we're recording your call") which breaks the formal/measured register. Or agent layer is too long, defeating the split. Or closing has a pre-closing token but no terminal exchange ("Bye now") — the call ends abruptly.
+**Common mis-applications (optimize mode):** Two-voice opening defined but the system and agent layers don't sound different — same TTS voice, same pacing, same register — so the user doesn't perceive a layer change. Or agent layer is too long, defeating the split. Or closing has a pre-closing token but no terminal exchange ("Bye now") — the call ends abruptly.
 
 ---
 
@@ -87,17 +87,17 @@ Citation prefix: **P** (e.g., `P3-no-input`, `P10-repair`).
 
 ## P7 — Silence & Latency Management
 
-**Summary:** Silences >700ms are perceptible; >1s trigger user remedial action. Pre-announce processing time; use acknowledgment bridges ("Let me check..."); offer callbacks for delays >10s. Never timeout silently.
+**Summary:** Silences >700ms are perceptible; >1s trigger user remedial action. Pre-announce processing time; use acknowledgment bridges ("Let me check..."); use verbal fillers every 3–5s for longer waits. Never timeout silently.
 
 **Voice vs. text contrast:** Text has no latency perception (spinner suffices); voice requires active communication during processing.
 
-**Migration heuristic:** Audit every action/tool call in the source script. For each, ask: how long does this take? If >1s, the LLM must say *something* before invoking it. See `telephony-patterns.md#T-latency`.
+**Migration heuristic:** Audit every action/tool call in the source script. For each, ask: how long does this take? If >1s, the LLM must say *something* before invoking it. For multi-second processing, follow up with verbal fillers every 3–5s. See `telephony-patterns.md#T-latency`.
 
 **Before/after:**
 - Text (implicit): [spinning wheel]
 - Voice (must be explicit): "Let me search... [pause] Comparing airlines... [pause] Cheapest is $845."
 
-**Common mis-applications (optimize mode):** Pre-announce exists for some actions but not all — usually the slowest ones get covered, but a 2–3 second lookup gets missed. Or pre-announce is identical for every operation regardless of expected duration ("Let me check…" used for both a 1-second cache hit and a 12-second multi-system join).
+**Common mis-applications (optimize mode):** Pre-announce exists for some actions but not all — usually the slowest ones get covered, but a 2–3 second lookup gets missed. Or pre-announce is identical for every operation regardless of expected duration ("Let me check…" used for both a 1-second cache hit and a 12-second multi-system join). Or processing >3s has no verbal filler, so the user starts wondering if the line dropped.
 
 ---
 

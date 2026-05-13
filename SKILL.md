@@ -169,7 +169,7 @@ Optimize mode adds **mis-application checks** (see `audit-rubric.md` for the ful
 - P10-mis-1: Repair tier 2 prompt is identical/near-identical to tier 1 → `[consider]`
 - P11-mis-1: Phrasebook has fewer than 3 tokens per function → `[consider]`
 - P2-mis-1: Grounding policy treats phone/email/money as low-stakes → `[changed]`
-- T-opening-mis-1: Two-voice opening system layer uses contractions → `[changed]`
+- T-opening-mis-1: Two-voice opening system and agent layers don't sound clearly different → `[changed]`
 
 Run mis-application checks in migrate mode too — they usually return `[ok]` (the principle isn't there to be mis-applied), but they catch half-migrated scripts.
 

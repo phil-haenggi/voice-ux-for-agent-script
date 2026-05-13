@@ -29,7 +29,7 @@ Used in both modes. These check whether a principle is *present at all*. In migr
 | P1 | Long monologues | Any single utterance > ~3 sentences without a question or pause point | Recommend chunking; flag barge-in concern (Layer E) |
 | P2 | Confirmation strategy | "Is that correct?" pattern OR explicit confirmation on low-stakes fields OR no confirmation on irreversible | Cross-reference T-grounding for field-type policy |
 | P3 | No-input/no-match | Error messages blame the user OR don't vary across attempts OR no escalation path | Map to T-repair tier |
-| P4 | Opening length | Welcome/opening utterance > ~5s spoken (~75 words) | Split or shorten; consider T-opening two-voice |
+| P4 | Opening length | Welcome/opening utterance notably > ~7s spoken (~100 words) | Split or shorten; consider T-opening two-voice |
 | P4 | Closing | Flow ends without pre-closing token before terminal | Insert pre-closing from T-phrasebook |
 | P5 | Prosody | Numbers, names, irreversible terms not marked for stress (where SSML supported) | Layer E recommendation, not in-script change |
 | P6 | Sequential gathering | Two or more pieces of info requested in one turn | Split; re-order to natural narrative if data-schema order is unnatural |
@@ -55,10 +55,10 @@ In migrate mode, these checks usually don't fire — the principle isn't present
 | P11-mis-1 | Phrasebook exists but has fewer than 3 tokens per function | Token count < 3 in any function category | `[consider]` |
 | P11-mis-2 | Phrasebook tokens mix registers (formal + casual in same function) | Heuristic: contractions in some tokens but not others within the same function category; or one token uses "thank you" while another uses "thanks" | `[consider]` |
 | P11-mis-3 | Acknowledgment tokens never rotate (same one used every turn in sample) | Same token used in >3 consecutive turns in the sample | `[consider]` |
-| P2-mis-1 | Grounding policy exists but treats high-stakes fields as low-stakes | Phone, email, money, or irreversible action uses implicit echo or no confirmation | `[changed]` |
+| P2-mis-1 | Grounding policy exists but doesn't escalate on low ASR confidence, OR money/irreversible actions get only implicit echo | Phone/email skim past on implicit echo regardless of confidence; OR money/irreversible actions have no explicit summary + check | `[changed]` |
 | P2-mis-2 | Grounding policy over-confirms low-stakes fields | Date, postcode, single name uses explicit "Is that correct?" pattern | `[consider]` |
-| T-opening-mis-1 | Two-voice opening exists but system layer uses contractions | "We're", "you're", "I'm" in system-layer content | `[changed]` |
-| T-opening-mis-2 | Two-voice opening exists but agent layer is too long | Agent-layer utterance > ~5s spoken (~75 words) | `[consider]` |
+| T-opening-mis-1 | Two-voice opening exists but system and agent layers don't sound clearly different | Same TTS voice used for both layers; or matching pacing/register such that the user can't perceive a layer change | `[changed]` |
+| T-opening-mis-2 | Two-voice opening exists but agent layer is too long | Agent-layer utterance notably > ~7s spoken (~100 words) | `[consider]` |
 | T-latency-mis-1 | Pre-announce exists for some actions but not all | Subset of tool/action calls have verbal lead-in; others don't | `[changed]` |
 | T-latency-mis-2 | Pre-announce exists but is identical for short and long operations | Same "Let me check…" used regardless of expected duration | `[consider]` |
 | P6-mis-1 | Sequential gathering exists but order doesn't match natural narrative | Field order matches data-schema (e.g., DOB before name) rather than how a person would volunteer | `[consider]` |
@@ -91,14 +91,14 @@ Used in both modes.
 | ID | Check | Action |
 |---|---|---|
 | T-grounding-low-stakes | Date / postcode / single name confirmed explicitly | Switch to implicit echo |
-| T-grounding-phone | Phone number not digit-by-digit confirmed | Add explicit digit-by-digit |
-| T-grounding-email | Email not SMS-handed-off (preferred) or char-by-char | Recommend SMS link if T-modality says SMS available; else char-by-char |
+| T-grounding-phone | Phone number confirmed only via implicit echo even on low ASR confidence | Escalate to explicit digit-by-digit when ASR confidence is low |
+| T-grounding-email | Email confirmed only via implicit echo even on low ASR confidence | Escalate to explicit char-by-char when ASR confidence is low; SMS handoff as a fallback if char-by-char is impractical |
 | T-grounding-money | Money/irreversible action without explicit summary | Add summary turn |
 | T-repair-tier-1 | First-attempt repair language blames user | Replace with neutral open repair |
 | T-repair-tier-2 | Second-attempt repair doesn't constrain or rephrase | Add constrained-vocabulary or candidate-understanding variant |
 | T-repair-tier-3 | Third-attempt has no handoff or drops state | Add handoff per modality matrix; preserve state |
 | T-latency-pre-announce | Tool/action call has no verbal lead-in | Insert "Let me check…" / "One moment…" per T-phrasebook |
-| T-latency-long | Action expected to take >10s, no callback option | Add call-back offer |
+| T-latency-long | Action expected to take >10s, no warning or filler | Add a "may take a while" warning before the action; verbal filler every 3–5s during processing |
 
 ---
 

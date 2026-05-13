@@ -73,8 +73,8 @@ Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization
 ### Grounding
 - Common acknowledgments: no confirmation.
 - Single dates, postcodes, single names: implicit echo as you advance ("Tuesday the 15th — and for what time?"). Escalate to phonetic spelling on low ASR confidence.
-- Phone numbers: read back digit by digit, every time.
-- Email: prefer SMS handoff. If unavailable, char-by-char readback.
+- Phone numbers: implicit echo on high ASR confidence; on low confidence, read back digit by digit.
+- Email: implicit echo on high ASR confidence; on low confidence, read back char by char. SMS handoff is a fallback if char-by-char is impractical.
 - Money or irreversible actions: explicit summary + check ("That's £85 to be charged today — shall I go ahead?") before commit.
 - If two fields appear inconsistent (e.g., name and email domain), do a soft check.
 
@@ -87,7 +87,7 @@ Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization
 ### Latency
 - Before any tool/action call expected to take more than a second, say something. "Let me check…" / "One moment…"
 - For multi-system or slow operations, check in verbally every 3–5 seconds.
-- For anything expected to take more than 10 seconds, offer a call-back instead.
+- For anything expected to take more than 10 seconds, warn the user that it may take a while; keep verbal fillers going during processing.
 
 ### Sequential gathering
 - Ask in natural narrative order, not data-schema order. If a person would volunteer date before time, ask date first.
@@ -135,15 +135,17 @@ Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization
 
 ## Layer D — Opening sequence
 
-### System layer (formal, distinct voice, no contractions)
+### System layer (formal, distinct voice, measured register)
 [Brand + emergency redirect + recording disclosure + AI disclosure]
 
 > Lives in: [carrier pre-call announcement IF available — see Layer E; otherwise voiced by agent in sequence]
+>
+> Critical: the system layer must sound clearly different from the agent layer (different TTS voice, pacing, register). The exact register choice is flexible; what matters is contrast.
 
 ### Handover
 600–900ms pause, optional faint audio cue.
 
-### Agent layer (warm, contractions, varied prosody, slightly slower)
+### Agent layer (warm, varied prosody, slightly slower than commercial baseline)
 [Self-identification + capability frame + first-topic question]
 
 > Lives in: Agent Script `welcome`
@@ -167,7 +169,7 @@ Suggested filename: `_local/generated/[agent-name]-voice-{migration,optimization
 - TTS voice selection (system layer vs. agent layer)
 - SSML support / prosody markup
 - Carrier-side pre-call announcement configuration
-- Call-back option configuration for long operations
+- Long-operation handling (warning copy + filler cadence) for >10s actions
 
 ---
 

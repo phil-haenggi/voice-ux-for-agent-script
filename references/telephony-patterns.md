@@ -47,15 +47,16 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 | Common acknowledgments | None | — |
 | Low-stakes single values (date, single name, postcode) | Implicit echo | Low ASR confidence |
 | Names | Implicit echo (high confidence) → phonetic (low confidence) | Cultural diversity, ASR confidence threshold |
-| Phone numbers | Explicit digit-by-digit | Always |
-| Email | SMS handoff (preferred) or explicit char-by-char | Always; SMS preferred |
+| Phone numbers | Implicit echo (high confidence) → explicit digit-by-digit (low confidence) | Low ASR confidence |
+| Email | Implicit echo (high confidence) → explicit char-by-char (low confidence); SMS handoff as a fallback if char-by-char is impractical | Low ASR confidence |
 | Money / irreversible actions | Explicit summary + check | Always |
 | Apparent inconsistencies (e.g. name vs. email) | Soft check | Always |
 
 **Implication for instructions (Layer A):** Encode grounding as conditional behavior keyed to field type. Don't write a flat "always confirm" rule — that produces over-confirmation on low-stakes fields and under-confirmation on irreversible ones.
 
 **Common mis-applications (optimize mode):**
-- Field-type policy exists but treats phone/email/money as low-stakes (implicit echo only).
+- Field-type policy exists but doesn't actually escalate on low ASR confidence — phone/email pass on implicit echo even when the recogniser was uncertain.
+- Money/irreversible actions get only implicit echo, with no explicit summary + check before commit.
 - Over-confirms low-stakes fields with "Is that correct?" patterns.
 - Confirms but then proceeds before the user can object (no pause for correction).
 - "Always confirm" flat rule disguised as field-type policy — same behavior across all fields.
@@ -90,7 +91,7 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 | T-latency-ack | Acknowledgment, simple confirmation | <1s | None |
 | T-latency-lookup | Brief lookup (slot availability, basic record) | 1–3s | Pre-announce ("Let me check…") |
 | T-latency-complex | Complex processing (multi-system) | 3–10s | Pre-announce + verbal filler every 3–5s |
-| T-latency-long | Anything >10s | — | Pre-announce + offer call-back option |
+| T-latency-long | Anything >10s | — | Pre-announce + verbal filler every 3–5s; warn the user it may take a while |
 
 **Implication for instructions (Layer A):** The LLM must say *something* before any non-trivial pause. Encode this as a behavioral rule, not a copy string.
 
@@ -98,7 +99,7 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 - Pre-announce exists for slow operations but missing for medium ones (1–3s lookups).
 - Same pre-announce string used regardless of expected duration ("Let me check…" for both 1s and 12s operations).
 - Verbal fillers absent for >3s operations (silent processing).
-- No call-back option offered for >10s operations.
+- For >10s operations, no warning that it may take a while — the user starts wondering if the line dropped.
 
 ---
 
@@ -129,8 +130,8 @@ These are starting points. Adjust register (warmer/cooler, more/less formal) to 
 
 | Layer | Voice characteristics | Content |
 |---|---|---|
-| T-opening-system | Distinct TTS voice; formal, measured, no contractions | Brand, emergency redirect, recording disclosure, AI disclosure |
-| T-opening-agent | Warm-clinical TTS voice; contractions, varied prosody, slightly slower than commercial baseline | Self-identification, capability frame, first-topic question |
+| T-opening-system | Distinct TTS voice; formal, measured register | Brand, emergency redirect, recording disclosure, AI disclosure |
+| T-opening-agent | Warm-clinical TTS voice; varied prosody, slightly slower than commercial baseline | Self-identification, capability frame, first-topic question |
 | T-opening-handover | 600–900ms pause; optional faint audio cue | — |
 
 **Carrier branching:**
@@ -140,8 +141,7 @@ These are starting points. Adjust register (warmer/cooler, more/less formal) to 
 **Implication for Layer D:** The opening is split across artifacts. System-layer content may live in carrier configuration (Layer E), agent-layer content lives in the Agent Script welcome.
 
 **Common mis-applications (optimize mode):**
-- System layer uses contractions ("we're recording your call") — breaks the formal/measured register that distinguishes it from the agent layer.
-- Agent layer is too long (>5s spoken length), defeating the split.
-- Two-voice structure defined but both layers use the same TTS voice — no auditory contrast for the user.
+- System and agent layers don't sound clearly different — same TTS voice, similar pacing, similar register — so the user doesn't perceive a layer change. The split exists on paper but not in the ear. (The exact register choice is flexible; what matters is contrast.)
+- Agent layer is too long (notably >7s spoken length), defeating the split.
 - System layer plays both via carrier AND agent (disclosure repetition), when carrier-side announcement is available.
 - Handover pause absent or too short (<300ms) — no perceptual gap between layers.
