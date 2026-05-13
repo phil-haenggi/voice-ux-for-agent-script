@@ -28,7 +28,7 @@ description: >
   testing-agentforce); analyzing production voice session traces (use
   observing-agentforce); configuring TTS voice casting, IVR menu structure, or
   ASR vendor settings (out of scope — surfaced in Layer E for handoff).
-version: 0.2.0
+version: 0.2.1
 date: 2026-05-13
 author: phil-haenggi
 tags: [salesforce, agentforce, agent-script, voice, telephony, migration, optimization, voice-ux, conversation-design, repair, grounding, latency, phrasebook, two-voice-opening, audit]
