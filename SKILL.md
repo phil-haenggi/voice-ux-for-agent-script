@@ -1,17 +1,21 @@
 ---
 name: voice-ux-for-agent-script
 description: >
-  Applies voice UX expertise to a Salesforce Agentforce Agent Script in either of
-  two modes: **migrate** (text-based Script → voice-optimized Script) or
-  **optimize** (existing voice Script → improved voice Script). Auto-detects mode
-  from the source's text-shaped vs. voice-shaped signals; user confirms or
+  Turns an Agentforce chat agent into a voice-ready agent, or audits a voice
+  agent for voice UX issues — produces both a planning bundle (for review and
+  handoff) and, optionally, a deployable `.agent` file. Useful for developers
+  building voice agents AND for PMs / conversation designers driving a voice
+  migration without writing `.agent` files themselves. Inputs: an existing
+  agent script, a sample conversation, and the `developing-agentforce`
+  companion skill installed. Two modes auto-detected from the source: migrate
+  (chat → voice) and optimize (voice → better voice); user confirms or
   overrides. Audits against 12 voice UX principles and operational telephony
   patterns (grounding policy, repair tiers, latency budget, persona phrasebook,
-  two-voice opening). Produces a layered rewrite: rewritten LLM instructions
-  with voice behavior baked in (repair, grounding, latency directives), rewritten
-  user-facing copy, persona phrasebook, opening sequence, and out-of-Agent-Script
-  notes for runtime/platform owners. In optimize mode, also flags principles
-  applied weakly (`[consider]` tier — "phrasebook exists but only has 2 tokens",
+  two-voice opening). Produces a layered rewrite: LLM instructions with voice
+  behavior baked in (repair, grounding, latency directives), user-facing copy,
+  persona phrasebook, opening sequence, and out-of-Agent-Script notes for
+  runtime/platform owners. In optimize mode, also flags principles applied
+  weakly (`[consider]` tier — "phrasebook exists but only has 2 tokens",
   "repair tier 2 identical to tier 1"). Preserves original business logic;
   surfaces conflicts with voice best practice as `[review needed]` rather than
   silently overriding (lower preservation bar in optimize mode than in migrate).
@@ -29,7 +33,7 @@ description: >
   voice session traces (use observing-agentforce); configuring TTS voice
   casting, IVR menu structure, or ASR vendor settings (out of scope — surfaced
   in Layer E for handoff).
-version: 0.3.0
+version: 0.3.1
 date: 2026-05-18
 author: phil-haenggi
 tags: [salesforce, agentforce, agent-script, voice, telephony, migration, optimization, voice-ux, conversation-design, repair, grounding, latency, phrasebook, two-voice-opening, audit]
@@ -43,6 +47,25 @@ allowed-tools:
 ---
 
 # Voice UX for Agent Script
+
+## What this skill does
+
+This skill takes an Agentforce agent — chat or voice — and applies voice UX expertise to it. The output is a voice-optimised rewrite with every change cited to a specific voice UX principle, plus (optionally) a deployable `.agent` file and publish to your org.
+
+It works for two audiences:
+- **Developers** building or refining a voice agent — drives the audit, generates the `.agent` file, walks you through deploy and publish.
+- **PMs and conversation designers** driving a voice migration without writing `.agent` files themselves — produces a planning bundle you can review with stakeholders and hand to a developer.
+
+Both audiences need the same three inputs (see Prerequisites below). The flow is the same; only Phases 7–8 (`.agent` generation + publish) require running developer commands. If you stop at Phase 6, the planning bundle is independently useful as a handoff artifact.
+
+**Typical session: 15–30 minutes.** You'll be asked:
+1. For your script and sample conversation (Phase 1).
+2. To confirm the mode the skill inferred (Phase 3).
+3. A few short questions about your voice channel — barge-in, screen fallback, SMS, carrier disclosures (Phase 3).
+4. Whether to continue to a deployable `.agent` file (Phase 6 → 7, optional).
+5. Whether to publish to your org (Phase 7 → 8, optional, requires explicit confirmation).
+
+**What you'll get back:** a layered bundle (rewritten LLM instructions / user-facing copy / persona phrasebook / opening sequence / out-of-script handoff notes), an inline audit citing each change, and — if you opted in — a compiled `.agent` file and a published agent in draft state.
 
 ## How to Use
 
@@ -104,6 +127,8 @@ The skill consults four local reference sets at runtime. Do not regenerate from 
 ## Phase 1 — Artifact Intake
 
 See the Prerequisites section for the three required inputs. Phase 1 verifies all three are present before any work begins.
+
+**On activation, before checking inputs:** voice a short version of the "What this skill does" frame as the opening message — what the skill produces, who it's for (both audiences), and what the session looks like (3–5 short bullets). Then ask for the three required inputs. Do not skip the frame; it's how both PMs and developers orient before committing to the session.
 
 **Behavior:**
 1. **afv-library check (first thing).** Confirm `developing-agentforce` is installed. If missing, refuse to proceed and surface the install command (`npx skills add forcedotcom/afv-library`). Do not continue to Phase 2 — the audit and rewrite assume `.agent` syntax knowledge.
