@@ -1,5 +1,9 @@
 # voice-ux-for-agent-script
 
+Designing for the ear is very different from designing for the eye.
+
+This skill applies voice UX expertise to your existing Agent Script: it rewrites what the agent says and how it behaves so it works for voice, cites every change to a specific voice UX principle, and — if you want — generates and publishes a deployable `.agent` file.
+
 Salesforce Agentforce skill: apply voice UX expertise to an Agent Script.
 
 ## What it does
