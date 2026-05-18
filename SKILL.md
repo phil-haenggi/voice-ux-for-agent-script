@@ -33,7 +33,7 @@ description: >
   voice session traces (use observing-agentforce); configuring TTS voice
   casting, IVR menu structure, or ASR vendor settings (out of scope — surfaced
   in Layer E for handoff).
-version: 0.3.1
+version: 0.3.4
 date: 2026-05-18
 author: phil-haenggi
 tags: [salesforce, agentforce, agent-script, voice, telephony, migration, optimization, voice-ux, conversation-design, repair, grounding, latency, phrasebook, two-voice-opening, audit]
@@ -44,6 +44,7 @@ allowed-tools:
   - AskUserQuestion
   - Glob
   - Grep
+  - Bash
 ---
 
 # Voice UX for Agent Script
@@ -91,7 +92,7 @@ This skill has three required inputs at intake — without all three, it refuses
 
 **Why afv-library is required (not optional):** the audit and rewrite both depend on knowing what `.agent` syntax will compile. Phase 5 produces directives that are written *into* an `.agent` structure; Phase 7 renders them into a deployable file; Phase 8 publishes. Even the planning bundle is shaped by Agent Script grammar — without the companion skill, the rewrite drifts into instructions the platform won't accept.
 
-If `developing-agentforce` is missing, surface the install command and stop:
+If `developing-agentforce` is missing, the skill refuses to proceed at **Phase 0 (dependency gate)** — see below. The gate surfaces the install command and stops. It does not continue to ask for inputs, does not voice the opening frame, and does not synthesize around the missing dependency.
 
 ```
 This skill requires `developing-agentforce` (from forcedotcom/afv-library).
@@ -106,6 +107,58 @@ Once installed, re-run and we'll proceed.
 - `testing-agentforce` (afv-library) — post-deploy test specs (`AiEvaluationDefinition`). The V1 review checklist includes a pilot-testing section; this skill is what runs those.
 - `observing-agentforce` (afv-library) — production session traces. Useful in **optimize** mode when the source script is already in production and trace data is available — the audit can ground itself in real conversations rather than instructions alone.
 - `sf-ai-agentforce-persona` (Salesforce skills bundle, separate install) — persona design. If extraction reveals the source has no coherent persona, recommend running this BEFORE Phase 4 audit; the phrasebook (Layer C) and opening (Layer D) need a defined persona to tune to.
+
+## Phase 0 — Dependency gate (runs before anything else)
+
+This is a hard gate. **It runs as the very first action when the skill is invoked, before voicing the opening frame, before greeting the user, before listing the three required inputs, before asking any question.** If it fails, the skill stops and refuses to proceed.
+
+### What's checked
+
+`developing-agentforce` (from `forcedotcom/afv-library`) must be installed at:
+
+```
+~/.claude/skills/developing-agentforce/SKILL.md
+```
+
+The skill is considered installed if and only if that path exists and is readable.
+
+### How to check (do this yourself — do NOT ask the user)
+
+Run **one** of these as the first tool call of the session:
+
+- `Bash`: `ls ~/.claude/skills/developing-agentforce/SKILL.md` — exit code 0 means installed.
+- `Read`: read `/Users/<user>/.claude/skills/developing-agentforce/SKILL.md` — successful read means installed.
+
+### What NOT to do
+
+- **Do NOT ask the user** "do you have `developing-agentforce` installed?" — check the filesystem yourself.
+- **Do NOT infer installation** from the system-reminder list of available skills shown to you on activation. That list reflects what the harness exposes, not necessarily what is on disk in the form this skill needs. Always verify against the filesystem.
+- **Do NOT take the user's word** if they say "I just installed it" — re-run the filesystem check before proceeding. (See "Re-check on resumption" below.)
+- **Do NOT proceed to the opening frame, input collection, or any later phase** if the check fails. The work cannot start without the dependency.
+
+### If found
+
+Proceed silently to the opening frame (Phase 1). Do not narrate the check. At most one terse line, e.g. "Verified `developing-agentforce` is installed." — and only if it adds value.
+
+### If not found
+
+Stop. Output the message below verbatim and do nothing else:
+
+```
+This skill requires `developing-agentforce` (from forcedotcom/afv-library), which I couldn't find at `~/.claude/skills/developing-agentforce/`.
+
+Please install it before we continue:
+
+    npx skills add forcedotcom/afv-library
+
+Once it's installed, re-run `/voice-ux-for-agent-script` and we'll start.
+```
+
+After surfacing this, you may help the user troubleshoot install issues (path conflicts, permission errors, `npx` not found, network failures) — but **do not begin Phase 1 work in the meantime, and do not ask for the script or sample**. The skill is paused until the dependency exists on disk.
+
+### Re-check on resumption
+
+If a previous turn ended at this gate and the user reports they have now installed it ("done", "installed", "try again"), **re-run the filesystem check** before proceeding. Do not take their word for it. If the check still fails, stop again with the same message.
 
 ## When to Use This Skill
 
@@ -126,17 +179,16 @@ The skill consults four local reference sets at runtime. Do not regenerate from 
 
 ## Phase 1 — Artifact Intake
 
-See the Prerequisites section for the three required inputs. Phase 1 verifies all three are present before any work begins.
+See the Prerequisites section for the three required inputs. Phase 0 already verified the `developing-agentforce` dependency. Phase 1 collects the remaining two inputs (script and sample).
 
-**On activation, before checking inputs:** voice a short version of the "What this skill does" frame as the opening message — what the skill produces, who it's for (both audiences), and what the session looks like (3–5 short bullets). Then ask for the three required inputs. Do not skip the frame; it's how both PMs and developers orient before committing to the session.
+**On activation, after Phase 0 passes, before checking inputs:** voice a short version of the "What this skill does" frame as the opening message — what the skill produces, who it's for (both audiences), and what the session looks like (3–5 short bullets). Then ask for the script and sample. Do not skip the frame; it's how both PMs and developers orient before committing to the session.
 
 **Behavior:**
-1. **afv-library check (first thing).** Confirm `developing-agentforce` is installed. If missing, refuse to proceed and surface the install command (`npx skills add forcedotcom/afv-library`). Do not continue to Phase 2 — the audit and rewrite assume `.agent` syntax knowledge.
-2. Read the source Script. Identify topics, actions, system instructions, welcome/error/copy strings.
-3. Read the sample.
-4. **If no sample is provided, refuse to proceed.** Tell the developer the skill needs a sample conversation, explain why (the audit is meaningless without seeing how the agent actually behaves turn by turn — repair, grounding, latency, and turn structure are observable only in flow), and ask them to provide one. Do not synthesize.
+1. Read the source Script. Identify topics, actions, system instructions, welcome/error/copy strings.
+2. Read the sample.
+3. **If no sample is provided, refuse to proceed.** Tell the developer the skill needs a sample conversation, explain why (the audit is meaningless without seeing how the agent actually behaves turn by turn — repair, grounding, latency, and turn structure are observable only in flow), and ask them to provide one. Do not synthesize.
 
-Do not proceed to Phase 2 until all three inputs are settled.
+Do not proceed to Phase 2 until both remaining inputs are settled.
 
 ## Phase 2 — Automated Extraction (mode detection)
 
