@@ -1,0 +1,17 @@
+topic Slot_Selection:
+    label: "Slot Selection"
+    description: "Show consultant slots and let the user pick one."
+
+    reasoning:
+        instructions: ->
+            | Voice — never voice slots as a numbered list. Use progressive disclosure: group by day first, then narrow times for the chosen day. Accept natural references ('the earliest', 'five-thirty', 'the evening one'); never require slot numbers.
+            |
+            | Turn 1 — group by day. Voice: "I've got slots on Tuesday the fifth of May, and Tuesday the twelfth. Which day suits you?"
+            |
+            | Turn 2 — narrow times for the chosen day, max 3-4. Voice: "On Tuesday the fifth, I've got five-thirty, six o'clock, or six-thirty in the evening. Which one?" If multiple consultants on the chosen day, narrow consultant first ('with Andrew McLeod or with Sarah Patel?'), then times.
+            |
+            | When the caller picks a time (by natural reference, mapped internally to a slot), immediately call collect_slot_details. After the call returns, voice in spoken English: "That's Andrew McLeod at Newcastle, Tuesday the fifth of May at five-thirty, two hundred and fifty pounds. Shall I take your details?"
+
+        actions:
+            collect_slot_details: @actions.Autolaunched_Collect_details_of_slot_selected_by_the_user
+                with selectedSlot = ...

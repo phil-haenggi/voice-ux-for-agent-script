@@ -42,15 +42,15 @@ Direct text-to-voice translation introduces text-shaped scaffolding that doesn't
 
 Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting confirmation logic.
 
-| Field type | Default grounding | Trigger to escalate |
-|---|---|---|
-| Common acknowledgments | None | — |
-| Low-stakes single values (date, single name, postcode) | Implicit echo | Low ASR confidence |
-| Names | Implicit echo (high confidence) → phonetic (low confidence) | Cultural diversity, ASR confidence threshold |
-| Phone numbers | Implicit echo (high confidence) → explicit digit-by-digit (low confidence) | Low ASR confidence |
-| Email | Implicit echo (high confidence) → explicit char-by-char (low confidence); SMS handoff as a fallback if char-by-char is impractical | Low ASR confidence |
-| Money / irreversible actions | Explicit summary + check | Always |
-| Apparent inconsistencies (e.g. name vs. email) | Soft check | Always |
+| Citation ID | Field type | Default grounding | Trigger to escalate |
+|---|---|---|---|
+| T-grounding-ack | Common acknowledgments | None | — |
+| T-grounding-postcode | Low-stakes single values (date, single name, postcode) | Implicit echo | Low ASR confidence |
+| T-grounding-name | Names | Implicit echo (high confidence) → phonetic (low confidence) | Cultural diversity, ASR confidence threshold |
+| T-grounding-phone | Phone numbers | Implicit echo (high confidence) → explicit digit-by-digit (low confidence) | Low ASR confidence |
+| T-grounding-email | Email | Implicit echo (high confidence) → explicit char-by-char (low confidence); SMS handoff as a fallback if char-by-char is impractical | Low ASR confidence |
+| T-grounding-money | Money / irreversible actions (booking commit, T&Cs accept, payment, age confirmation) | Explicit summary + yes/no check | Always |
+| T-grounding-soft-check | Apparent inconsistencies (e.g. name vs. email) | Soft check | Always |
 
 **Implication for instructions (Layer A):** Encode grounding as conditional behavior keyed to field type. Don't write a flat "always confirm" rule — that produces over-confirmation on low-stakes fields and under-confirmation on irreversible ones.
 
@@ -94,6 +94,8 @@ Risk-stratified, not one-size-fits-all. Use as a decision table when rewriting c
 | T-latency-long | Anything >10s | — | Pre-announce + verbal filler every 3–5s; warn the user it may take a while |
 
 **Implication for instructions (Layer A):** The LLM must say *something* before any non-trivial pause. Encode this as a behavioral rule, not a copy string.
+
+**T-latency-pre-announce** — operational umbrella for all four tiers above when the operation is >1s: pre-announce verbally before any tool/action call expected to take >1 second; vary across the phrasebook; never start a tool call silently. Used as the citation in pattern files that don't need to specify a tier.
 
 **Common mis-applications (optimize mode):**
 - Pre-announce exists for slow operations but missing for medium ones (1–3s lookups).

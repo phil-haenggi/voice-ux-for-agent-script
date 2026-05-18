@@ -1,0 +1,26 @@
+topic Postcode_Capture:
+    label: "Postcode Capture"
+    description: "Collect and validate the user's postcode."
+
+    reasoning:
+        instructions: ->
+            | If validated_postal_code is empty, ask the user: "Please provide your postcode."
+            | Save the user's reply via save_postal_code, then run Validate_Postal_Code.
+            | If the validation returns "Invalid", respond exactly: "Provided postal code is invalid, please provide a valid postal code". Wait for retry.
+            | If validation returns "Valid", proceed to the next phase.
+
+        actions:
+            save_postal_code: @utils.setVariables
+                description: "Store the postcode the user provided."
+                with new_postal_code = ...
+
+    actions:
+        Validate_Postal_Code:
+            description: "Validate the postcode."
+            inputs:
+                "Input:PostalCode": string
+                    is_required: True
+            outputs:
+                promptResponse: string
+                    is_displayable: True
+            target: "generatePromptResponse://Postal_Code_Validator"

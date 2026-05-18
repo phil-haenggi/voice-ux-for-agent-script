@@ -23,13 +23,14 @@ description: >
   expertise applied.
 
   DO NOT TRIGGER when: building a voice agent from scratch with no source Script
-  (use developing-agentforce); designing the agent persona/voice character
-  (use agent-persona); running test specs against a voice agent (use
-  testing-agentforce); analyzing production voice session traces (use
-  observing-agentforce); configuring TTS voice casting, IVR menu structure, or
-  ASR vendor settings (out of scope — surfaced in Layer E for handoff).
-version: 0.2.2
-date: 2026-05-13
+  (start with `developing-agentforce` to scaffold one, then return here);
+  designing the agent persona/voice character (use agent-persona); running test
+  specs against a voice agent (use testing-agentforce); analyzing production
+  voice session traces (use observing-agentforce); configuring TTS voice
+  casting, IVR menu structure, or ASR vendor settings (out of scope — surfaced
+  in Layer E for handoff).
+version: 0.3.0
+date: 2026-05-18
 author: phil-haenggi
 tags: [salesforce, agentforce, agent-script, voice, telephony, migration, optimization, voice-ux, conversation-design, repair, grounding, latency, phrasebook, two-voice-opening, audit]
 allowed-tools:
@@ -57,6 +58,32 @@ Mode is auto-detected from extraction signals (text-shaped vs. voice-shaped patt
 
 **What it does not do:** Build voice agents from scratch. Design the agent's persona/voice character. Run runtime QA. Configure TTS/ASR/IVR. Generate non-English copy. Resolve multi-intent or emotional-de-escalation patterns (gaps in the source library — flagged as `[out-of-scope]`).
 
+## Prerequisites
+
+This skill has three required inputs at intake — without all three, it refuses to proceed:
+
+1. **The source Agent Script** (`.agent` file, YAML, or text instructions).
+2. **A sample conversation** showing the main use case (turn-by-turn transcript). Real production logs, hand-written mockups, or the developer's best guess are all acceptable — but the developer is responsible for representativeness.
+3. **`developing-agentforce`** (from `forcedotcom/afv-library`) — installed and available. This skill provides `.agent` syntax, Agent Script CLI usage, and `aiAuthoringBundle` scaffolding.
+
+**Why afv-library is required (not optional):** the audit and rewrite both depend on knowing what `.agent` syntax will compile. Phase 5 produces directives that are written *into* an `.agent` structure; Phase 7 renders them into a deployable file; Phase 8 publishes. Even the planning bundle is shaped by Agent Script grammar — without the companion skill, the rewrite drifts into instructions the platform won't accept.
+
+If `developing-agentforce` is missing, surface the install command and stop:
+
+```
+This skill requires `developing-agentforce` (from forcedotcom/afv-library).
+Install it before continuing:
+
+    npx skills add forcedotcom/afv-library
+
+Once installed, re-run and we'll proceed.
+```
+
+**Recommended companions (not required, but called out where relevant):**
+- `testing-agentforce` (afv-library) — post-deploy test specs (`AiEvaluationDefinition`). The V1 review checklist includes a pilot-testing section; this skill is what runs those.
+- `observing-agentforce` (afv-library) — production session traces. Useful in **optimize** mode when the source script is already in production and trace data is available — the audit can ground itself in real conversations rather than instructions alone.
+- `sf-ai-agentforce-persona` (Salesforce skills bundle, separate install) — persona design. If extraction reveals the source has no coherent persona, recommend running this BEFORE Phase 4 audit; the phrasebook (Layer C) and opening (Layer D) need a defined persona to tune to.
+
 ## When to Use This Skill
 
 - **Migrate:** Migrating a working text-based Agentforce Agent Script to voice (telephony or voice-over-web). Auditing a chat-based agent for voice UX issues without committing to a full rewrite.
@@ -66,24 +93,25 @@ Mode is auto-detected from extraction signals (text-shaped vs. voice-shaped patt
 
 ## Reference Material
 
-The skill consults three local references at runtime. Do not regenerate from external sources — read these.
+The skill consults four local reference sets at runtime. Do not regenerate from external sources — read these.
 
 - `references/voice-ux-principles.md` — 12 voice UX principles (P1–P12) with citation IDs, voice-vs-text contrasts, migration heuristics, and **common mis-applications for optimize mode**. Source of `why:` lines in audit.
 - `references/telephony-patterns.md` — operational decision tables: 8 chat→voice translation rules (T-translate-1..8), grounding policy by field type (T-grounding), repair tier ladder (T-repair-tier-1..3), latency budget (T-latency), persona phrasebook scaffold (T-phrasebook), two-voice opening (T-opening). Each table has mis-application notes for optimize mode.
 - `references/audit-rubric.md` — coverage contract mapping each principle and pattern to a check. Includes both presence checks (used in both modes) and **mis-application checks (optimize mode)**. Documents mode-dependent conflict thresholds.
+- `references/patterns/` — **per-file pattern catalog** (40 patterns across 9 categories: A system-instructions, B welcome-and-static, C display-formatting, D input-collection / spell-confirm, E output-presentation, F crisis-and-safety, G latency-masking, H configuration, I variables). Each file has frontmatter (id, severity, applies_to, couples_with, detection rules), a chat example, a recommended voice example, alternatives, anti-patterns, and (where relevant) optimize-mode mis-applications. Phase 2 extraction loads only `references/patterns/README.md` (cheap index); Phase 4 audit loads only the bodies of patterns whose detection hit.
+- `references/publish-errors/` — catalog of known `sf agent publish authoring-bundle` errors with canonical fixes. Optional Phase 8 (publish-with-self-healing) consumes this.
 
 ## Phase 1 — Artifact Intake
 
-**Required inputs:**
-- Path to or contents of the source Agent Script (`.agent` file, YAML, or text instructions).
-- Path to or contents of a sample conversation showing the main use case (turn-by-turn transcript). Real production logs, hand-written mockups, or the developer's best guess are all acceptable — but the developer is responsible for representativeness.
+See the Prerequisites section for the three required inputs. Phase 1 verifies all three are present before any work begins.
 
 **Behavior:**
-1. Read the source Script. Identify topics, actions, system instructions, welcome/error/copy strings.
-2. Read the sample.
-3. **If no sample is provided, refuse to proceed.** Tell the developer the skill needs a sample conversation, explain why (the audit is meaningless without seeing how the agent actually behaves turn by turn — repair, grounding, latency, and turn structure are observable only in flow), and ask them to provide one. Do not synthesize.
+1. **afv-library check (first thing).** Confirm `developing-agentforce` is installed. If missing, refuse to proceed and surface the install command (`npx skills add forcedotcom/afv-library`). Do not continue to Phase 2 — the audit and rewrite assume `.agent` syntax knowledge.
+2. Read the source Script. Identify topics, actions, system instructions, welcome/error/copy strings.
+3. Read the sample.
+4. **If no sample is provided, refuse to proceed.** Tell the developer the skill needs a sample conversation, explain why (the audit is meaningless without seeing how the agent actually behaves turn by turn — repair, grounding, latency, and turn structure are observable only in flow), and ask them to provide one. Do not synthesize.
 
-Do not proceed to Phase 2 until the sample is settled.
+Do not proceed to Phase 2 until all three inputs are settled.
 
 ## Phase 2 — Automated Extraction (mode detection)
 
@@ -139,7 +167,11 @@ Skip any question whose answer is already visible in the Script or sample.
 
 ## Phase 4 — Audit + Rewrite
 
-Run the audit per `references/audit-rubric.md`. For each row in the rubric, produce one of:
+Run the audit per `references/audit-rubric.md` AND `references/patterns/`. The rubric is the **abstract** contract (principle-by-principle coverage); the patterns folder is the **operational** source (concrete chat-example + voice-example + alternatives per detected pattern).
+
+**Pattern loading is lazy:** Phase 2 extraction loads only `references/patterns/README.md` (the index) and walks each pattern's frontmatter `detection:` rules against the source. For each hit, Phase 4 loads the full pattern body to apply it. Patterns that don't hit don't load — keeps token cost in check.
+
+For each row in the rubric / each hit pattern, produce one of:
 
 - `[changed]` — voice principle violated or absent, rewrite applied
 - `[ok]` — principle already respected (counts in summary, not surfaced inline)
@@ -197,10 +229,44 @@ After writing, summarize for the developer:
 - Counts: changed / review needed / consider / out-of-scope / ok per category
 - Top 3 review-needed and consider items with one-line context
 - Layer E item count (work still owed to platform/runtime owner)
-- Synthetic-sample warnings if applicable
 - Path to the migration/optimization bundle
 
 Do not re-summarize the rewrite content — they can read it.
+
+After hand-back, ask whether to proceed to optional Phase 7 (`.agent` generation) or stop. Stopping after Phase 6 is the default — the bundle is independently usable as a planning / handoff artifact.
+
+## Phase 7 — Generate `.agent` file (optional)
+
+If the developer wants a deployable `.agent` rather than just the planning bundle:
+
+1. **Apply patterns to the source `.agent`** in the canonical Application order from `references/patterns/README.md` (H → I → A → per-topic A → D/E/F/G → action progress messages → final C strip).
+2. **Use `Edit` for surgical changes.** Use `Write` only when overwriting full sections is cleaner.
+3. **Generate side artifacts:**
+   - `pronunciation-dictionary.md` per `templates/pronunciation-dictionary.md` if H04 detected.
+   - `key-term-prompting.md` per `templates/key-term-prompting.md` if H05 detected.
+   - `v1-review-checklist.md` per `templates/v1-review-checklist.md` (always).
+4. **Sample dialog (optional sub-step):** generate 5–7 turns of voice dialog using the new agent's instructions, replaying a representative scenario from the provided sample. Use as a quick sanity check before publish. Iterate on developer feedback.
+5. **Validate locally** with `sf agent validate authoring-bundle --api-name <name> --target-org <org>`. This is a server-side compile check (read-only). Fix any compile errors before Phase 8.
+
+Output: `_local/generated/[agent-name].agent` plus the side artifacts.
+
+**Critical: per-topic action declarations are NOT duplicates.** Each topic's `actions:` block is scoped — actions referenced in that topic's `reasoning.instructions` MUST be declared in that topic's `actions:` block. If two topics both call `Validate_Postal_Code`, declare it in BOTH. Removing a "duplicate" breaks publish. (See `references/patterns/README.md`.)
+
+## Phase 8 — Publish with self-healing (optional)
+
+If the developer wants the agent published to a target org:
+
+1. **Confirm target org and agent name** via `AskUserQuestion`. Display org details (`sf org display --target-org <alias>`) before any deploy action — orgId, instanceUrl, alias, agent label, agent API name. Require explicit YES/NO confirmation.
+2. **Verify bundle structure.** The bundle directory must contain `<name>.agent` and `<name>.bundle-meta.xml` (note: `.bundle-meta.xml`, not `.aiAuthoringBundle-meta.xml` — the Agent Script CLI is specific). Create the meta XML if missing (minimum viable shown in `references/publish-errors/E003`).
+3. **Publish:** `sf agent publish authoring-bundle --api-name <name> --target-org <org>`.
+4. **Self-healing on failure:** initialise `PUBLISH_ITERATION = 0`, `MAX_PUBLISH_ITERATIONS = 15`. On error, capture stderr and match against `references/publish-errors/`. For each match:
+   - If `auto_fix: true`, apply the canonical fix and re-publish.
+   - If `auto_fix: false`, surface the canonical fix to the developer and ask before applying.
+   - If no match, surface the raw error and ask the developer to inspect.
+5. **Verify success** with a Tooling/Data API query against `BotDefinition` to confirm the agent record exists with the expected `DeveloperName`. (The CLI's post-publish "Retrieve Metadata" step occasionally fails with `Cannot set properties of undefined (setting 'target')` — see `references/publish-errors/E005`. The publish itself can have succeeded even when the CLI exits non-zero on this step.)
+6. **Hand-back:** print agent ID, label, target org, and direct link to Agent Builder. Summarise any auto-fixes that were applied during the loop.
+
+The agent publishes in **draft / inactive** state. It does not handle live traffic until separately activated. This is safe by default — no customer-facing impact from a publish alone.
 
 ## What this skill does NOT do
 
@@ -228,12 +294,61 @@ Self-checks the skill should run before declaring the work complete:
 
 ```
 voice-ux-for-agent-script/
-├── SKILL.md                          # This file
-├── README.md                         # External-facing brief
+├── SKILL.md                              # This file
+├── README.md                             # External-facing brief
 ├── references/
-│   ├── voice-ux-principles.md        # 12 principles + mis-applications
-│   ├── telephony-patterns.md         # T-translate, T-grounding, T-repair, T-latency, T-phrasebook, T-opening + mis-applications
-│   └── audit-rubric.md               # Coverage contract, mis-application checks, mode-dependent conflict policy, mode-detection signals
+│   ├── voice-ux-principles.md            # 12 principles (P1–P12) + mis-applications
+│   ├── telephony-patterns.md             # T-translate, T-grounding, T-repair, T-latency, T-phrasebook, T-opening + mis-applications
+│   ├── audit-rubric.md                   # Coverage contract, mis-application checks, mode-dependent conflict policy, mode-detection signals
+│   ├── patterns/                         # Per-file pattern catalog — concrete chat→voice patterns with worked examples
+│   │   ├── README.md                     # Index, application order, coupling rules
+│   │   ├── _schema.md                    # Frontmatter spec + body section requirements + lint rules
+│   │   ├── A01-numbered-list-rule.md
+│   │   ├── A02-confirmation-rule.md
+│   │   ├── A03-numeric-input-as-yes-no.md
+│   │   ├── A04-one-question-per-turn.md
+│   │   ├── A05-congratulatory-language-ban.md
+│   │   ├── A06-currency-spoken-form.md
+│   │   ├── A07-slot-selection-collapse.md
+│   │   ├── B01-welcome-length.md
+│   │   ├── B02-welcome-ai-disclosure.md
+│   │   ├── B03-error-message-voice-readable.md
+│   │   ├── B04-pre-chat-variable-interpolation.md
+│   │   ├── C01-html-tags-in-spoken-content.md
+│   │   ├── C02-markdown-in-spoken-content.md
+│   │   ├── C03-interface-verbs.md
+│   │   ├── C04-url-read-aloud.md
+│   │   ├── C05-chat-ui-references.md
+│   │   ├── D01-postcode-collection.md
+│   │   ├── D02-name-spell-back.md
+│   │   ├── D03-date-of-birth.md
+│   │   ├── D04-phone-number.md
+│   │   ├── D05-email-address.md
+│   │   ├── D06-reference-numbers.md
+│   │   ├── E01-slot-list-presentation.md
+│   │   ├── E02-summary-readback.md
+│   │   ├── E03-long-static-messages.md
+│   │   ├── E04-speciality-list-enumeration.md
+│   │   ├── F01-crisis-flow-no-hangup.md
+│   │   ├── F02-red-flag-symptom-checklist.md
+│   │   ├── G01-progress-message-required.md
+│   │   ├── G02-pre-action-narration.md
+│   │   ├── H01-modality-and-connection-blocks.md
+│   │   ├── H02-strip-pre-chat-seeding.md
+│   │   ├── H03-voice-settings.md
+│   │   ├── H04-pronunciation-dictionary.md
+│   │   ├── H05-key-term-prompting.md
+│   │   └── I01-spoken-format-companion-variables.md
+│   └── publish-errors/                   # Known sf agent publish errors and canonical fixes (for optional Phase 8)
+│       ├── README.md
+│       ├── E001-locale-restricted-picklist.md
+│       ├── E002-invocation-target-restricted-picklist.md
+│       ├── E003-bundle-meta-filename.md
+│       ├── E004-disable-graph-runtime-legacy-builder.md
+│       └── E005-cli-retrieve-undefined-target.md
 └── templates/
-    └── rewrite-bundle.md             # Output skeleton (Layers A–E, mode-aware)
+    ├── rewrite-bundle.md                 # Output skeleton — Phase 5 bundle (Layers A–E, mode-aware)
+    ├── pronunciation-dictionary.md       # Output skeleton — generated when H04 detected (Phase 7)
+    ├── key-term-prompting.md             # Output skeleton — generated when H05 detected (Phase 7)
+    └── v1-review-checklist.md            # Output skeleton — V1 review items, annotated per migration (Phase 7)
 ```

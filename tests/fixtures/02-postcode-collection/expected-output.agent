@@ -1,0 +1,41 @@
+topic Postcode_Capture:
+    label: "Postcode Capture"
+    description: "Collect and validate the user's postcode."
+
+    reasoning:
+        instructions: ->
+            | Voice — postcode is STT-hostile (alphanumeric, similar-sounding letters and digits). Apply T-grounding-postcode + T-repair tiers.
+            |
+            | If validated_postal_code is empty, voice: "What's your postcode?"
+            |
+            | When the caller replies, save via save_postal_code and pre-announce ("Just checking that postcode…"), then run Validate_Postal_Code.
+            |
+            | On high recognition confidence: implicit echo on read-back ("G-U-seven, one-P-Z — got it.") then continue. Read letters individually ("G, U, seven") not concatenated. Pause briefly between the outward part (e.g. "GU7") and the inward part (e.g. "1PZ"). Use "zero" for digits, "oh" only for letter-O.
+            |
+            | On low recognition confidence: explicit letter-by-letter confirmation ("Just to confirm, that's G-U-seven, one-P-Z — is that right?"). Wait for explicit yes / no.
+            |
+            | Tier-1 repair on validation Invalid (no blame, varied wording): "Sorry, I didn't catch that — could you say your postcode again?"
+            |
+            | Tier-2 repair on second miss (constrained, format hint allowed only here): "You can say it letter by letter — like G-U-seven, one-P-Z."
+            |
+            | Tier-3 (third miss or user frustration): hand off to a support adviser with state preserved — never make the caller start over.
+            |
+            | On Valid, continue to the next phase without further confirmation.
+
+        actions:
+            save_postal_code: @utils.setVariables
+                description: "Store the postcode the caller provided."
+                with new_postal_code = ...
+
+    actions:
+        Validate_Postal_Code:
+            description: "Validate the postcode."
+            inputs:
+                "Input:PostalCode": string
+                    is_required: True
+            outputs:
+                promptResponse: string
+                    is_displayable: False
+            target: "generatePromptResponse://Postal_Code_Validator"
+            include_in_progress_indicator: True
+            progress_indicator_message: "Just checking that postcode…"

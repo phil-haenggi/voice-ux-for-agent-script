@@ -1,0 +1,21 @@
+topic Slot_Selection:
+    label: "Slot Selection"
+    description: "Show consultant slots and let the user pick one."
+
+    reasoning:
+        instructions: ->
+            | Display the available slots in the following format and ask the user to pick one:
+            | "Here are the available slots with Cardiology consultants near your location:
+            | <b>Consultant: Andrew McLeod at Newcastle Hospital (£250 / 30 min)</b>
+            | <ol start=&quot;1&quot;>
+            | <li>05 May 2026 at 5:30 PM</li>
+            | <li>05 May 2026 at 6:00 PM</li>
+            | <li>05 May 2026 at 6:30 PM</li>
+            | <li>12 May 2026 at 7:00 PM</li>
+            | </ol>
+            | Please select a slot by providing the corresponding number (for example, '2')."
+            | When the user replies with a number, map to the slot at that position and call collect_slot_details.
+
+        actions:
+            collect_slot_details: @actions.Autolaunched_Collect_details_of_slot_selected_by_the_user
+                with selectedSlot = ...

@@ -15,7 +15,9 @@ Voice UX best practices are baked directly into the LLM-facing instructions, not
 
 ## What it produces
 
-A single bundle (`_local/generated/[agent-name]-voice-{migration,optimization}.md`) with five labeled layers:
+The skill runs in 8 phases. Phases 1–6 are always run; Phases 7 and 8 are opt-in.
+
+**Phases 1–6** produce a planning bundle (`_local/generated/[agent-name]-voice-{migration,optimization}.md`) with five labeled layers:
 
 - **Layer A** — Rewritten LLM instructions (turn structure, repair ladder, grounding policy, latency directives)
 - **Layer B** — Rewritten user-facing copy strings (welcome, errors, prompts, confirmations)
@@ -24,6 +26,18 @@ A single bundle (`_local/generated/[agent-name]-voice-{migration,optimization}.m
 - **Layer E** — Out-of-Agent-Script notes (ASR thresholds, silence timers, TTS voice selection, carrier config — for handoff to platform/runtime owner)
 
 Plus an inline audit citing each change to a specific principle, with tags: `[changed]`, `[review needed]`, `[consider]` (optimize only), `[out-of-scope]`.
+
+**Phase 7 (optional)** generates a deployable `.agent` file by applying patterns to the source in canonical order, plus side artifacts (pronunciation dictionary, key-term prompting, V1 review checklist) and a local `sf agent validate` pass.
+
+**Phase 8 (optional)** publishes to a target org with a self-healing loop: known publish errors are matched against `references/publish-errors/` and canonical fixes are applied automatically (or surfaced for confirmation, depending on the error). The agent publishes in draft / inactive state — no live traffic until separately activated.
+
+## Prerequisites
+
+Three required inputs at intake — without all three the skill refuses to proceed:
+
+1. The source Agent Script (`.agent`, YAML, or text instructions)
+2. A sample conversation (real production log, mockup, or developer's best guess)
+3. **`developing-agentforce`** installed via `npx skills add forcedotcom/afv-library` — required because the audit and rewrite assume `.agent` syntax knowledge so the output compiles
 
 ## When to use
 
@@ -38,7 +52,7 @@ Plus an inline audit citing each change to a specific principle, with tags: `[ch
 
 ## When NOT to use
 
-- Building a voice agent from scratch with no source script → use `developing-agentforce`
+- Building a voice agent from scratch with no source script → start with `developing-agentforce` to scaffold one, then return here
 - Designing the agent's persona / voice character → use `agent-persona`
 - Running test specs against a voice agent → use `testing-agentforce`
 - Analyzing production voice session traces → use `observing-agentforce`
@@ -60,11 +74,23 @@ voice-ux-for-agent-script/
 ├── references/
 │   ├── voice-ux-principles.md        # 12 principles (P1–P12) + mis-applications
 │   ├── telephony-patterns.md         # Operational tables + mis-applications
-│   └── audit-rubric.md               # Coverage contract, mis-application checks, mode-dependent conflict policy, mode-detection signals
-└── templates/
-    └── rewrite-bundle.md             # Output skeleton (Layers A–E, mode-aware)
+│   ├── audit-rubric.md               # Coverage contract, mis-application checks, mode-dependent conflict policy, mode-detection signals
+│   ├── patterns/                     # 40-pattern catalog (per-file: detection, chat example, voice example, alternatives)
+│   └── publish-errors/               # Known sf agent publish errors with canonical fixes (Phase 8)
+├── templates/
+│   ├── rewrite-bundle.md             # Output skeleton — Phase 5 bundle (Layers A–E)
+│   ├── pronunciation-dictionary.md   # Output skeleton — generated when H04 detected (Phase 7)
+│   ├── key-term-prompting.md         # Output skeleton — generated when H05 detected (Phase 7)
+│   └── v1-review-checklist.md        # Output skeleton — V1 review items (Phase 7)
+├── scripts/
+│   └── lint-patterns.py              # Frontmatter validator for references/patterns/
+└── tests/
+    ├── run.sh                        # Fixture orchestrator (manual review)
+    └── fixtures/                     # 3 fixture cases for regression review
 ```
 
 ## Status
 
-v0.2.2 — sample conversation now mandatory; synthetic-sample fallback removed. v0.2.1 refined criteria (openings, two-voice contrast, latency, grounding). v0.2.0 added optimize mode, mode auto-detection, mis-application checks, mode-dependent conflict policy. Renamed from `migrating-text-to-voice` (v0.1.0). Not yet validated against a real audit.
+v0.3.0 — `developing-agentforce` (afv-library) now mandatory at intake alongside source script and sample conversation. Added Phase 7 (deployable `.agent` generation) and Phase 8 (publish with self-healing against known-error catalog). Added 40-file pattern catalog operationalizing the abstract principles, plus pattern linter and test fixtures.
+
+**Earlier:** v0.2.2 made sample conversation mandatory (no synthetic fallback). v0.2.1 refined criteria for openings, two-voice contrast, latency, and grounding. v0.2.0 added optimize mode, mode auto-detection, mis-application checks, and mode-dependent conflict policy. Renamed from `migrating-text-to-voice` (v0.1.0).

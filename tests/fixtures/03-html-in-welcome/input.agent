@@ -1,0 +1,15 @@
+system:
+    instructions: "You are an AI assistant for Acme Health. Be empathetic and professional."
+
+    messages:
+        welcome: | Hi {!@variables.First_Name}, I'm your Acme Health virtual assistant.<br> I can help you book appointments and answer general questions, but I can't give you specific medical advice or diagnoses.<br> This chat isn't monitored and we don't offer emergency services, so if you need urgent medical help, please call 111 or 999.<br> To find out how we use your data, see our <a href="https://acmehealth.example.com/privacy">privacy policy</a>.<br> Your chat ID is {!@variables.Transcript_Id_Formula}. Please keep this for reference.<br> **How can I help you today?**
+
+        error: "Sorry, something went wrong. Please refresh the page and try again."
+
+config:
+    developer_name: "Acme_Health_Assistant"
+    agent_label: "Acme Health Assistant"
+    agent_type: "AgentforceServiceAgent"
+
+connection messaging:
+    adaptive_response_allowed: False

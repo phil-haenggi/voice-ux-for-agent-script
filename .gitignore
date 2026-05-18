@@ -1,0 +1,6 @@
+# Local working examples — contain real org IDs, customer-shaped names, brand identifiers.
+# Useful as developer sanity-check material; not for public distribution.
+_local/
+
+# OS metadata
+.DS_Store
